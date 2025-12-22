@@ -5,21 +5,18 @@
       <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
       <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
     </Filter>
-    <Filter Include="github">
-      <UniqueIdentifier>{a2eb61d7-9edc-4915-a439-45a0661841ed}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files">
-      <UniqueIdentifier>{906a4527-1b46-46fe-87de-1f6658345cf7}</UniqueIdentifier>
+    <Filter Include="Header FIles">
+      <UniqueIdentifier>{6b6bf0f0-917c-4ea9-b7b5-430f12a9711e}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="main.cpp">
+    <ClCompile Include="map.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\README.md">
-      <Filter>github</Filter>
-    </None>
+    <ClInclude Include="map.h">
+      <Filter>Header FIles</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
