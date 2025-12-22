@@ -1,0 +1,7 @@
+<Solution>
+  <Configurations>
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Project Path="HiveMind/HiveMind.vcxproj" Id="a0004cf5-35d7-4e0a-b5d6-770bc37756ec" />
+</Solution>
