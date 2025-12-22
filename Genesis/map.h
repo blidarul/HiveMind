@@ -1,6 +1,15 @@
 #pragma once
 #include <vector>
 
+enum class CellType
+{
+	empty = '.',
+	wall = '#',
+	hub = 'B',
+	station = 'S',
+	client = 'D'
+};
+
 class Map
 {
 public:

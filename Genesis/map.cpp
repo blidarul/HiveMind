@@ -1,7 +1,7 @@
-#include <limits>
-#include <stdexcept>
-#include <iostream>
 #include "map.h"
+#include <iostream>
+#include <stdexcept>
+#include <vector>
 
 Map::Map(int width, int height) : m_width(width), m_height(height) 
 {
@@ -11,12 +11,14 @@ Map::Map(int width, int height) : m_width(width), m_height(height)
 	}
 	if (width > 0 && height > 0)
 	{
-		if (width > std::numeric_limits<size_t>::max() / height)
+		if (width > 100000 / height)
 		{
 			throw std::overflow_error("Map size too large");
 		}
 	}
+
 	m_data.resize(static_cast<size_t>(m_width) * static_cast<size_t>(m_height));
+
 	for (size_t i = 0; i < m_data.size(); ++i)
 	{
 		// Initialize all cells to '.' (empty grid)
