@@ -1,7 +1,7 @@
 #pragma once
 #include <vector>
 
-enum class CellType
+enum CellType
 {
 	empty = '.',
 	wall = '#',
@@ -22,5 +22,5 @@ public:
 private:
 	int m_width;
 	int m_height;
-	std::vector<char> m_data;
+	std::vector<CellType> m_data;
 };
