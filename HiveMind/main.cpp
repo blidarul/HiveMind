@@ -8,10 +8,11 @@ int main()
 	{
 		Map map(20, 20);
 
+		MapGenerator generator(new FileMapLoader());
+		generator.generateMap(map);
+
 		map.printMap();
 
-		map.generateMap();
-		map.printMap();
 	}
 	catch (const std::exception& e)
 	{
