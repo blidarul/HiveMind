@@ -5,7 +5,7 @@
 
 int Package::s_nextID = 1;
 
-Package::Package(const Map& map, mapPosition destination, int ticks, int reward)
+Package::Package(const Map& map)
 	: m_id(s_nextID++)
 	, isLate(false)
 {
@@ -27,6 +27,24 @@ int Package::getRemainingTicks() const
 int Package::getReward() const
 {
 	return m_reward;
+}
+
+bool Package::getIsLate() const
+{
+	return isLate;
+}
+
+void Package::decrementTick()
+{
+	if (m_remainingTicks > 0)
+	{
+		m_remainingTicks--;
+	}
+	
+	if (m_remainingTicks == 0 && !isLate)
+	{
+		isLate = true;
+	}
 }
 
 PackageGenerator::PackageGenerator(const Map& map)

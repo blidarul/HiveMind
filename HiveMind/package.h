@@ -5,10 +5,13 @@
 class Package
 {
 public:
-	Package(const Map& map, mapPosition destination, int ticks, int reward);
+	Package(const Map& map);
 	mapPosition getDestination() const;
 	int getRemainingTicks() const;
 	int getReward() const;
+	bool getIsLate() const;
+	
+	void decrementTick();
 
 private:
 	static int s_nextID;

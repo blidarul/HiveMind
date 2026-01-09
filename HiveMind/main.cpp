@@ -13,6 +13,7 @@ int main()
 		simulation.printFloodfill();
 		simulation.printParameters();
 		simulation.printStatus();
+		simulation.printAlivePackages();
 #endif
 		simulation.run();
 	}

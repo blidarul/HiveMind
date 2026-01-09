@@ -78,11 +78,21 @@ mapPosition Drone::getCurrentPosition() const
 	return m_currentPosition;
 }
 
+std::vector<std::unique_ptr<Package>>& Drone::getPackages()
+{
+	return m_packages;
+}
+
 // --------------------------
 
 mapPosition Robot::getCurrentPosition() const
 {
 	return m_currentPosition;
+}
+
+std::vector<std::unique_ptr<Package>>& Robot::getPackages()
+{
+	return m_packages;
 }
 
 // --------------------------
@@ -92,6 +102,11 @@ mapPosition Scooter::getCurrentPosition() const
 	return m_currentPosition;
 }
 
+std::vector<std::unique_ptr<Package>>& Scooter::getPackages()
+{
+	return m_packages;
+}
+
 // constructors -------------------------------------------
 
 Drone::Drone(mapPosition startPos)
@@ -99,7 +114,7 @@ Drone::Drone(mapPosition startPos)
 	m_id = s_nextID++;
 	m_symbol = AgentSymbol::DRONE;
 	m_state = AgentState::IDLE;
-	m_ticksAlive = 0;
+	m_ticksMoving = 0;
 
 	m_targetPosition = m_currentPosition = startPos;
 	m_speed = DRONE_SPEED;
@@ -112,6 +127,7 @@ Drone::Drone(mapPosition startPos)
 
 	m_maxCapacity = DRONE_MAX_CAPACITY;
 	m_currentLoad = 0;
+	m_personalRewards = 0;
 }
 
 // --------------------------
@@ -121,7 +137,7 @@ Robot::Robot(mapPosition startPos)
 	m_id = s_nextID++;
 	m_symbol = AgentSymbol::ROBOT;
 	m_state = AgentState::IDLE;
-	m_ticksAlive = 0;
+	m_ticksMoving = 0;
 
 	m_targetPosition = m_currentPosition = startPos;
 	m_speed = ROBOT_SPEED;
@@ -143,7 +159,7 @@ Scooter::Scooter(mapPosition startPos)
 	m_id = s_nextID++;
 	m_symbol = AgentSymbol::SCOOTER;
 	m_state = AgentState::IDLE;
-	m_ticksAlive = 0;
+	m_ticksMoving = 0;
 
 	m_targetPosition = m_currentPosition = startPos;
 	m_speed = SCOOTER_SPEED;
@@ -162,7 +178,14 @@ Scooter::Scooter(mapPosition startPos)
 
 void Drone::move()
 {
-	// TO DO implement move
+	if (m_nextMoves.empty())
+		return;
+
+	mapPosition move = m_nextMoves.front();
+	m_nextMoves.erase(m_nextMoves.begin());
+
+	m_currentPosition.x += move.x;
+	m_currentPosition.y += move.y;
 }
 
 // --------------------------
@@ -285,7 +308,42 @@ void Drone::pathfindToHub(const Map& map)
 
 bool Drone::deliverPackage()
 {
+	if (m_packages.empty())
+		return false;
+
+	for (auto it = m_packages.begin(); it != m_packages.end(); ++it)
+	{
+		if ((*it)->getDestination().x == m_currentPosition.x && 
+			(*it)->getDestination().y == m_currentPosition.y)
+		{
+			m_personalRewards += (*it)->getReward();
+			m_packages.erase(it);
+			m_currentLoad--;
+			return true;
+		}
+	}
 	return false;
+}
+
+// assign package functions -------------------------------
+
+bool Drone::assignPackage(std::unique_ptr<Package> package)
+{
+	if (m_currentLoad >= m_maxCapacity)
+		return false;
+
+	m_targetPosition = package->getDestination();
+	m_packages.push_back(std::move(package));
+	m_currentLoad++;
+	pathfindToTarget();
+	return true;
+}
+
+// operation cost getters ---------------------------------
+
+int Drone::getTotalOperationCost() const
+{
+	return m_operationCostTotal;
 }
 
 // state handling functions -------------------------------
@@ -303,19 +361,23 @@ void Drone::handleState(const Map& map)
 			break;
 		}
 
-		//check if agent is on client position
-		for (auto clientPos : map.getClientPositions())
+		//check if agent is on client position and has packages
+		if (m_currentLoad > 0)
 		{
-			if (clientPos.x == getCurrentPosition().x && clientPos.y == getCurrentPosition().y)
+			for (auto clientPos : map.getClientPositions())
 			{
-				if (deliverPackage())
+				if (clientPos.x == m_currentPosition.x && clientPos.y == m_currentPosition.y)
 				{
-					pathfindToHub(map);
+					deliverPackage();
+					
+					if (m_currentLoad == 0)
+					{
+						//return to hub
+						pathfindToHub(map);
+						if (!m_nextMoves.empty())
+							m_state = AgentState::MOVING;
+					}
 					break;
-				}
-				else
-				{
-					throw std::runtime_error("Drone tried to deliver package but failed");
 				}
 			}
 		}
@@ -324,11 +386,6 @@ void Drone::handleState(const Map& map)
 		if (!m_nextMoves.empty())
 		{
 			m_state = AgentState::MOVING;
-			for (int i = 0; i < m_speed; ++i)
-			{
-				move();
-			}
-			break;
 		}
 
 		break;
@@ -341,30 +398,41 @@ void Drone::handleState(const Map& map)
 			break;
 		}
 
-		//check if agent is on charging station
-		for (auto stationPos : map.getStationPositions())
+		//check if agent is on charging station and needs charge
+		if (m_currentBattery < m_maxBattery)
 		{
-			if (stationPos.x == getCurrentPosition().x && stationPos.y == getCurrentPosition().y)
+			for (auto stationPos : map.getStationPositions())
 			{
-				m_state = AgentState::CHARGING;
-				break;
+				if (stationPos.x == m_currentPosition.x && stationPos.y == m_currentPosition.y)
+				{
+					m_state = AgentState::CHARGING;
+					break;
+				}
 			}
 		}
 
-		//check if the agent has queued moves
-		if (!m_nextMoves.empty())
+		//move based on speed
+		if (m_state == AgentState::MOVING && !m_nextMoves.empty())
 		{
-			move();
-		}
-		else
-		{
-			m_state = AgentState::IDLE;
+			for (int i = 0; i < m_speed && !m_nextMoves.empty(); ++i)
+			{
+				move();
+				if (m_state == AgentState::DEAD)
+					break;
+			}
+			
+			// check if reached destination
+			if (m_nextMoves.empty())
+			{
+				m_state = AgentState::IDLE;
+			}
 		}
 		break;
 	// CHARGING STATE -------------------------------------
 	case AgentState::CHARGING:
-		if (m_currentBattery == m_maxBattery)
+		if (m_currentBattery >= m_maxBattery)
 		{
+			m_currentBattery = m_maxBattery;
 			if (!m_nextMoves.empty())
 				m_state = AgentState::MOVING;
 			else
@@ -380,6 +448,8 @@ void Drone::handleState(const Map& map)
 	default:
 		break;
 	}
+	
+	m_ticksMoving++;
 }
 
 // --------------------------

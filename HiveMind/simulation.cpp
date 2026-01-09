@@ -21,7 +21,9 @@ Simulation::Simulation()
 	, m_robotCount(0)
 	, m_scooterCount(0)
 	, m_totalPackages(0)
+	, m_packagesSpawned(0)
 	, m_spawnRate(0)
+	, m_ticksSinceLastSpawn(0)
 	, m_totalPenalties(0)
 	, m_totalRewards(0)
 	, m_totalOperationalCosts(0)
@@ -106,6 +108,7 @@ void Simulation::printParameters() const
 void Simulation::printStatus() const
 {
 	std::cout << "Tick: " << m_currentTick << "/" << m_maxTicks << '\n';
+	std::cout << "Packages Spawned: " << m_packagesSpawned << "/" << m_totalPackages << '\n';
 	std::cout << "Agents:\n";
 	for (const auto& agent : m_agents)
 	{
@@ -125,6 +128,45 @@ void Simulation::printMap() const
 void Simulation::printFloodfill() const
 {
 	m_map.printFloodfill(m_map.getFloodfillData());
+}
+
+void Simulation::printAlivePackages() const
+{
+	std::cout << "\n=== Tick " << m_currentTick << " | Packages Spawned: " << m_packagesSpawned << "/" << m_totalPackages << " ===\n";
+	
+	std::cout << "Packages in Base (" << m_packagesInBase.size() << "):\n";
+	for (const auto& package : m_packagesInBase)
+	{
+		mapPosition dest = package->getDestination();
+		std::cout << "  Destination: (" << dest.x << ", " << dest.y << ")"
+			<< " | Remaining Ticks: " << package->getRemainingTicks()
+			<< " | Reward: " << package->getReward()
+			<< (package->getIsLate() ? " | [LATE]" : "") << '\n';
+	}
+
+	int totalPackagesOnAgents = 0;
+	for (const auto& agent : m_agents)
+	{
+		totalPackagesOnAgents += static_cast<int>(agent->getPackages().size());
+	}
+	
+	std::cout << "Packages on Agents (" << totalPackagesOnAgents << "):\n";
+	for (const auto& agent : m_agents)
+	{
+		if (agent->getPackages().empty())
+			continue;
+		std::cout << "  Agent: " << static_cast<char>(agent->getSymbol()) << " ID: " << agent->getID() << '\n';
+		for (const auto& package : agent->getPackages())
+		{
+			mapPosition dest = package->getDestination();
+			std::cout << "    Destination: (" << dest.x << ", " << dest.y << ")"
+				<< " | Remaining Ticks: " << package->getRemainingTicks()
+				<< " | Reward: " << package->getReward()
+				<< (package->getIsLate() ? " | [LATE]" : "") << '\n';
+		}
+	}
+	
+	std::cout << "Total Active Packages: " << (m_packagesInBase.size() + totalPackagesOnAgents) << "\n";
 }
 #endif
 
@@ -181,6 +223,8 @@ void Simulation::initializeAgents()
 void Simulation::advanceTick()
 {
 	m_currentTick++;
+	m_ticksSinceLastSpawn++;
+	updatePackageTicks();
 }
 
 void Simulation::run()
@@ -188,11 +232,41 @@ void Simulation::run()
 	while (m_currentTick < m_maxTicks)
 	{
 		advanceTick();
-
+		spawnPackage();
+		printAlivePackages();
 	}
 }
 
 void Simulation::calculateProfit()
 {
 	m_profit = m_totalRewards - m_totalOperationalCosts - m_totalPenalties;
+}
+
+void Simulation::spawnPackage()
+{
+	if(m_ticksSinceLastSpawn >= m_spawnRate && m_packagesSpawned < m_totalPackages)
+	{
+		auto newPackage = std::make_unique<Package>(m_map);
+		m_packagesInBase.push_back(std::move(newPackage));
+		m_ticksSinceLastSpawn = 0;
+		m_packagesSpawned++;
+	}
+}
+
+void Simulation::updatePackageTicks()
+{
+	// Update packages in base
+	for (auto& package : m_packagesInBase)
+	{
+		package->decrementTick();
+	}
+	
+	// Update packages on agents
+	for (auto& agent : m_agents)
+	{
+		for (auto& package : agent->getPackages())
+		{
+			package->decrementTick();
+		}
+	}
 }

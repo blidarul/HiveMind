@@ -17,6 +17,7 @@ public:
 	void printStatus() const;
 	void printMap() const;
 	void printFloodfill() const;
+	void printAlivePackages() const;
 #endif
 
 	void run();
@@ -25,6 +26,8 @@ private:
 	void getMap();
 	void initializeAgents();
 	void calculateProfit();
+	void spawnPackage();
+	void updatePackageTicks();
 
 	void advanceTick();
 
@@ -49,6 +52,9 @@ private:
 	int m_profit;
 
 	//package related parameters
+	std::vector<std::unique_ptr<Package>> m_packagesInBase;
 	int m_totalPackages;
+	int m_packagesSpawned;
 	int m_spawnRate;
+	int m_ticksSinceLastSpawn;
 };

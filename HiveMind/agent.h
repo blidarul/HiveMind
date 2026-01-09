@@ -1,6 +1,8 @@
 #pragma once
 #include "map.h"
+#include "package.h"
 #include <vector>
+#include <memory>
 
 // enums --------------------------------------------------
 enum AgentSymbol
@@ -27,6 +29,7 @@ public:
 	virtual AgentSymbol getSymbol() const = 0;
 	virtual AgentState getState() const = 0;
 	virtual mapPosition getCurrentPosition() const = 0;
+	virtual std::vector<std::unique_ptr<Package>>& getPackages() = 0;
 
 	virtual void move() = 0;
 	virtual void chargeBattery() = 0;
@@ -45,10 +48,11 @@ public:
 	AgentSymbol getSymbol() const override;
 	AgentState getState() const override;
 	mapPosition getCurrentPosition() const override;
-
-	// TO DO: implement getPath function
+	std::vector<std::unique_ptr<Package>>& getPackages() override;
 
 	void handleState(const Map& map);
+	bool assignPackage(std::unique_ptr<Package> package);
+	int getTotalOperationCost() const;
 
 private:
 	bool checkDeath();
@@ -62,16 +66,17 @@ private:
 	int m_id;
 	AgentSymbol m_symbol;
 	AgentState m_state;
-	int m_ticksAlive;
+	int m_ticksMoving;
 
 	std::vector<mapPosition> m_nextMoves;
 	mapPosition m_currentPosition;
 	mapPosition m_targetPosition;
 	int m_speed;
 
-	//TO DO: implement package vector
+	std::vector<std::unique_ptr<Package>> m_packages;
 	int m_maxCapacity;
 	int m_currentLoad;
+	int m_personalRewards;
 
 	int m_maxBattery;
 	int m_currentBattery;
@@ -92,8 +97,7 @@ public:
 	AgentSymbol getSymbol() const override;
 	AgentState getState() const override;
 	mapPosition getCurrentPosition() const override;
-
-	// TO DO: implement getPath function
+	std::vector<std::unique_ptr<Package>>& getPackages() override;
 
 	void handleState();
 
@@ -106,14 +110,14 @@ private:
 	int m_id;
 	AgentSymbol m_symbol;
 	AgentState m_state;
-	int m_ticksAlive;
+	int m_ticksMoving;
 
-	// TO DO: implement next moves vector
+	std::vector<mapPosition> m_nextMoves;
 	mapPosition m_currentPosition;
 	mapPosition m_targetPosition;
 	int m_speed;
 
-	//TO DO: implement package vector
+	std::vector<std::unique_ptr<Package>> m_packages;
 	int m_maxCapacity;
 	int m_currentLoad;
 
@@ -136,8 +140,7 @@ public:
 	AgentSymbol getSymbol() const override;
 	AgentState getState() const override;
 	mapPosition getCurrentPosition() const override;
-
-	//TO DO: implement getPath function
+	std::vector<std::unique_ptr<Package>>& getPackages() override;
 	
 	void handleState();
 
@@ -150,14 +153,14 @@ private:
 	int m_id;
 	AgentSymbol m_symbol;
 	AgentState m_state;
-	int m_ticksAlive;
+	int m_ticksMoving;
 
-	//TO DO: implement next moves vector
+	std::vector<mapPosition> m_nextMoves;
 	mapPosition m_currentPosition;
 	mapPosition m_targetPosition;
 	int m_speed;
 
-	//TO DO: implement package vector
+	std::vector<std::unique_ptr<Package>> m_packages;
 	int m_maxCapacity;
 	int m_currentLoad;
 

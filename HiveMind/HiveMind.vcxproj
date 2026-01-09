@@ -151,8 +151,8 @@
     <ClCompile Include="agent.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="package.cpp" />
-    <ClCompile Include="simulation.cpp" />
     <ClCompile Include="map.cpp" />
+    <ClCompile Include="simulation.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\README.md" />
