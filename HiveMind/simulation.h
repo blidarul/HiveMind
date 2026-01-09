@@ -1,8 +1,8 @@
 #pragma once
-#include <vector>
+#include "agent.h"
 #include "map.h"
 #include <memory>
-#include "agent.h"
+#include <vector>
 
 #define	DEBUG 1
 

@@ -1,11 +1,12 @@
+#include "agent.h"
 #include "simulation.h"
-#include "constants.h"
 #include <fstream>
+#include <memory>
 #include <sstream>
 #include <string>
-#include "agent.h"
-#include <memory>
 #include <vector>
+#include <stdexcept>
+#include "map.h"
 
 #ifdef DEBUG
 #include <iostream>
@@ -114,9 +115,6 @@ void Simulation::printStatus() const
 			<< " | State: " << static_cast<int>(agent->getState())
 			<< " | Position: (" << pos.x << ", " << pos.y << ")\n";
 	}
-	std::cout << "Total Rewards: " << m_totalRewards << '\n';
-	std::cout << "Total Penalties: " << m_totalPenalties << '\n';
-	std::cout << "Total Operational Costs: " << m_totalOperationalCosts << '\n';
 }
 
 void Simulation::printMap() const
@@ -126,8 +124,7 @@ void Simulation::printMap() const
 
 void Simulation::printFloodfill() const
 {
-	std::vector<int> distances = m_map.floodfill(m_map.getHubPosition().x, m_map.getHubPosition().y);
-	m_map.printFloodfill(distances);
+	m_map.printFloodfill(m_map.getFloodfillData());
 }
 #endif
 
@@ -142,11 +139,25 @@ void Simulation::getMap()
 
 	#ifdef DEBUG
 		generator = new MapGenerator(new FileMapLoader());
+		generator->generateMap(m_map);
+		if (!generator->verifyMap(m_map))
+		{
+			delete generator;
+			throw std::runtime_error("Invalid map file: map verification failed");
+		}
 	#else
 		generator = new MapGenerator(new ProceduralMapGenerator());
+		do
+		{
+			generator->generateMap(m_map);
+		} while (!generator->verifyMap(m_map));
 	#endif
-
-	generator->generateMap(m_map);
+	
+	delete generator;
+	
+	// Compute and store floodfill data from hub position
+	mapPosition hubPos = m_map.getHubPosition();
+	m_map.computeFloodfill(hubPos.x, hubPos.y);
 }
 
 void Simulation::initializeAgents()
@@ -169,15 +180,15 @@ void Simulation::initializeAgents()
 
 void Simulation::advanceTick()
 {
-	// Placeholder for advancing the simulation by one tick
-	// This would include moving agents, spawning packages, updating costs/rewards, etc.
+	m_currentTick++;
 }
 
 void Simulation::run()
 {
-	for (m_currentTick = 0; m_currentTick < m_maxTicks; ++m_currentTick)
+	while (m_currentTick < m_maxTicks)
 	{
 		advanceTick();
+
 	}
 }
 

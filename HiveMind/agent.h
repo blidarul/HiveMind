@@ -47,19 +47,23 @@ public:
 
 	// TO DO: implement getPath function
 
-	void handleState();
+	void handleState(const Map& map);
 
 private:
+	bool checkDeath();
 	void chargeBattery() override;
 	void move() override;
-	
+	bool deliverPackage();
+	void pathfindToTarget();
+	void pathfindToHub(const Map& map);
+
 	static int s_nextID;
 	int m_id;
 	AgentSymbol m_symbol;
 	AgentState m_state;
 	int m_ticksAlive;
 
-	//TO DO: implement next moves vector
+	std::vector<mapPosition> m_nextMoves;
 	mapPosition m_currentPosition;
 	mapPosition m_targetPosition;
 	int m_speed;
@@ -93,6 +97,7 @@ public:
 	void handleState();
 
 private:
+	bool checkDeath();
 	void move() override;
 	void chargeBattery() override;
 
@@ -136,6 +141,7 @@ public:
 	void handleState();
 
 private:
+	bool checkDeath();
 	void move() override;
 	void chargeBattery() override;
 

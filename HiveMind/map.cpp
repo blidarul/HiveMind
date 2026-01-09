@@ -2,9 +2,9 @@
 #include "map.h"
 #include <fstream>
 #include <iostream>
+#include <random>
 #include <stdexcept>
 #include <vector>
-#include <random>
 
 //MAP CLASS IMPLEMENTATION --------------------------------
 
@@ -50,11 +50,6 @@ int Map::getHeight() const
 	return m_height;
 }
 
-mapPosition Map::getHubPosition() const
-{
-	return m_hubPosition;
-}
-
 size_t Map::getIndex(int x, int y) const
 {
 	if (x < 0 || x >= m_width || y < 0 || y >= m_height)
@@ -62,6 +57,43 @@ size_t Map::getIndex(int x, int y) const
 		throw std::out_of_range("Coordinates out of map bounds");
 	}
 	return static_cast<size_t>(y) * static_cast<size_t>(m_width) + static_cast<size_t>(x);
+}
+
+mapPosition Map::getHubPosition() const
+{
+	return m_hubPosition;
+}
+
+std::vector<mapPosition> Map::getStationPositions() const
+{
+	return m_stationPositions;
+}
+
+std::vector<mapPosition> Map::getClientPositions() const
+{
+	return m_clientPositions;
+}
+
+size_t Map::getClientCount() const
+{
+	return getClientPositions().size();
+}
+
+size_t Map::getStationCount() const
+{
+	return getStationPositions().size();
+}
+
+// floodfill computation and storage ----------------------
+
+void Map::computeFloodfill(int startX, int startY)
+{
+	m_floodfillData = floodfill(startX, startY);
+}
+
+const std::vector<int>& Map::getFloodfillData() const
+{
+	return m_floodfillData;
 }
 
 // print funtions -----------------------------------------
@@ -152,6 +184,11 @@ std::vector<int> Map::floodfill(int startX, int startY) const
 
 void FileMapLoader::generate(Map& map)
 {
+	// Clear previous generation data
+	map.m_hubPosition = { -1, -1 };
+	map.m_stationPositions.clear();
+	map.m_clientPositions.clear();
+	
 	std::ifstream file(DEBUG_MAP_FILE_PATH);
 	if (!file.is_open())
 	{
@@ -194,6 +231,11 @@ void FileMapLoader::generate(Map& map)
 
 void ProceduralMapGenerator::generate(Map& map)
 {
+	// clean sheet
+	map.m_hubPosition = { -1, -1 };
+	map.m_stationPositions.clear();
+	map.m_clientPositions.clear();
+	
 	// initialize random number generator
 	std::random_device rd;
 	std::mt19937 gen(rd());
@@ -308,7 +350,7 @@ void MapGenerator::generateMap(Map& map)
 bool MapGenerator::verifyMap(const Map& map) const
 {
 	mapPosition hubPos = map.getHubPosition();
-	if (hubPos.x == 0 && hubPos.y == 0)
+	if (hubPos.x == -1 && hubPos.y == -1)
 	{
 		return false;
 	}
@@ -338,7 +380,31 @@ bool MapGenerator::verifyMap(const Map& map) const
 		return false;
 	}
 
-	//TO DO: implement floodfill
+
+	// floodfill from hub
+	std::vector<int> distances = map.floodfill(hubPos.x, hubPos.y);
+
+	// check if all clients are reacheable
+	for (size_t i = 0; i < map.m_clientPositions.size(); ++i)
+	{
+		mapPosition clientPos = map.m_clientPositions[i];
+		size_t clientIndex = map.getIndex(clientPos.x, clientPos.y);
+		if (distances[clientIndex] == -1)
+		{
+			return false;
+		}
+	}
+
+	// check if all stations are reacheable
+	for (size_t i = 0; i < map.m_stationPositions.size(); ++i)
+	{
+		mapPosition stationPos = map.m_stationPositions[i];
+		size_t stationIndex = map.getIndex(stationPos.x, stationPos.y);
+		if (distances[stationIndex] == -1)
+		{
+			return false;
+		}
+	}
 
 	return true;
 }

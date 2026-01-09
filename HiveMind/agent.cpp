@@ -1,5 +1,7 @@
 #include "agent.h"
 #include "constants.h"
+#include "map.h"
+#include <stdexcept>
 
 // static members -----------------------------------------
 int Drone::s_nextID = 1;
@@ -182,7 +184,7 @@ void Scooter::move()
 void Drone::chargeBattery()
 {
 	if (m_currentBattery < m_maxBattery)
-		m_currentBattery += m_maxBattery / 4;
+		m_currentBattery += static_cast<int>(m_maxBattery * BATTERY_RECHARGE_RATE);
 	else
 		m_currentBattery = m_maxBattery;
 }
@@ -192,7 +194,7 @@ void Drone::chargeBattery()
 void Robot::chargeBattery()
 {
 	if (m_currentBattery < m_maxBattery)
-		m_currentBattery += m_maxBattery / 4;
+		m_currentBattery += static_cast<int>(m_maxBattery * BATTERY_RECHARGE_RATE);
 	else
 		m_currentBattery = m_maxBattery;
 }
@@ -202,16 +204,182 @@ void Robot::chargeBattery()
 void Scooter::chargeBattery()
 {
 	if (m_currentBattery < m_maxBattery)
-		m_currentBattery += m_maxBattery / 4;
+		m_currentBattery += static_cast<int>(m_maxBattery * BATTERY_RECHARGE_RATE);
 	else
 		m_currentBattery = m_maxBattery;
 }
 
+// check death functions ----------------------------------
+
+bool Drone::checkDeath()
+{
+	if (m_currentBattery <= 0)
+	{
+		m_state = AgentState::DEAD;
+		return true;
+	}
+	return false;
+}
+
+bool Robot::checkDeath()
+{
+	if (m_currentBattery <= 0)
+	{
+		m_state = AgentState::DEAD;
+		return true;
+	}
+	return false;
+}
+
+bool Scooter::checkDeath()
+{
+	if (m_currentBattery <= 0)
+	{
+		m_state = AgentState::DEAD;
+		return true;
+	}
+	return false;
+}
+
+// pathfinding to target ----------------------------------
+
+void Drone::pathfindToTarget()
+{
+	mapPosition	calculatedPosition = m_currentPosition;
+
+	while (m_targetPosition.x != calculatedPosition.x || m_targetPosition.y != calculatedPosition.y)
+	{
+		if (calculatedPosition.x < m_targetPosition.x)
+		{
+			m_nextMoves.push_back({ 1, 0 });
+			calculatedPosition.x++;
+		}
+		else if (calculatedPosition.x > m_targetPosition.x)
+		{
+			m_nextMoves.push_back({ -1, 0 });
+			calculatedPosition.x--;
+		}
+
+		if (calculatedPosition.y < m_targetPosition.y)
+		{
+			m_nextMoves.push_back({ 0, 1 });
+			calculatedPosition.y++;
+		}
+		else if (calculatedPosition.y > m_targetPosition.y)
+		{
+			m_nextMoves.push_back({ 0, -1 });
+			calculatedPosition.y--;
+		}
+	}
+}
+
+// pathfinding to hub -------------------------------------
+	
+void Drone::pathfindToHub(const Map& map)
+{
+	m_targetPosition = map.getHubPosition();
+	pathfindToTarget();
+}
+
+// deliver package functions ------------------------------
+
+bool Drone::deliverPackage()
+{
+	return false;
+}
+
 // state handling functions -------------------------------
 
-void Drone::handleState()
+void Drone::handleState(const Map& map)
 {
-	// TO DO implement handle state
+	switch (m_state)
+	{
+	// IDLE STATE -----------------------------------------
+	case AgentState::IDLE:
+		//check if dead
+		if (m_currentBattery <= 0)
+		{
+			m_state = AgentState::DEAD;
+			break;
+		}
+
+		//check if agent is on client position
+		for (auto clientPos : map.getClientPositions())
+		{
+			if (clientPos.x == getCurrentPosition().x && clientPos.y == getCurrentPosition().y)
+			{
+				if (deliverPackage())
+				{
+					pathfindToHub(map);
+					break;
+				}
+				else
+				{
+					throw std::runtime_error("Drone tried to deliver package but failed");
+				}
+			}
+		}
+
+		//check if the agent has queued moves
+		if (!m_nextMoves.empty())
+		{
+			m_state = AgentState::MOVING;
+			for (int i = 0; i < m_speed; ++i)
+			{
+				move();
+			}
+			break;
+		}
+
+		break;
+	// MOVING STATE ---------------------------------------
+	case AgentState::MOVING:
+		//check if dead
+		if (m_currentBattery <= 0)
+		{
+			m_state = AgentState::DEAD;
+			break;
+		}
+
+		//check if agent is on charging station
+		for (auto stationPos : map.getStationPositions())
+		{
+			if (stationPos.x == getCurrentPosition().x && stationPos.y == getCurrentPosition().y)
+			{
+				m_state = AgentState::CHARGING;
+				break;
+			}
+		}
+
+		//check if the agent has queued moves
+		if (!m_nextMoves.empty())
+		{
+			move();
+		}
+		else
+		{
+			m_state = AgentState::IDLE;
+		}
+		break;
+	// CHARGING STATE -------------------------------------
+	case AgentState::CHARGING:
+		if (m_currentBattery == m_maxBattery)
+		{
+			if (!m_nextMoves.empty())
+				m_state = AgentState::MOVING;
+			else
+				m_state = AgentState::IDLE;
+		}
+		else
+		{
+			chargeBattery();
+		}
+		break;
+	// DEAD STATE -----------------------------------------
+	case AgentState::DEAD:
+	default:
+		break;
+	}
 }
 
 // --------------------------

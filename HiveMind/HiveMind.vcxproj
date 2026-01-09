@@ -150,6 +150,7 @@
   <ItemGroup>
     <ClCompile Include="agent.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="package.cpp" />
     <ClCompile Include="simulation.cpp" />
     <ClCompile Include="map.cpp" />
   </ItemGroup>
@@ -163,6 +164,7 @@
   <ItemGroup>
     <ClInclude Include="agent.h" />
     <ClInclude Include="constants.h" />
+    <ClInclude Include="package.h" />
     <ClInclude Include="simulation.h" />
     <ClInclude Include="map.h" />
   </ItemGroup>
