@@ -1,12 +1,12 @@
 #include "agent.h"
+#include "map.h"
 #include "simulation.h"
 #include <fstream>
 #include <memory>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 #include <vector>
-#include <stdexcept>
-#include "map.h"
 
 #ifdef DEBUG
 #include <iostream>

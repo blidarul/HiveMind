@@ -1,6 +1,6 @@
 #pragma once
-#include <random>
 #include "map.h"
+#include <random>
 
 class Package
 {

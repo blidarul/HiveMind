@@ -1,5 +1,6 @@
 #pragma once
 #include "map.h"
+#include <vector>
 
 // enums --------------------------------------------------
 enum AgentSymbol

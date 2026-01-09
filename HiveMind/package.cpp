@@ -1,7 +1,7 @@
-#include "package.h"
-#include "map.h"
-#include <random>
 #include "constants.h"
+#include "map.h"
+#include "package.h"
+#include <random>
 
 int Package::s_nextID = 1;
 
