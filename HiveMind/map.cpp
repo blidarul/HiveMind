@@ -6,7 +6,7 @@
 #include <vector>
 #include <random>
 
-//MAP CLASS IMPLEMENTATION
+//MAP CLASS IMPLEMENTATION --------------------------------
 
 Map::Map(int width, int height, int stationCount, int clientCount)
 	: m_width(width)
@@ -38,7 +38,7 @@ Map::Map(int width, int height, int stationCount, int clientCount)
 
 Map::~Map() {}
 
-// getters
+// getters ------------------------------------------------
 
 int Map::getWidth() const
 {
@@ -64,6 +64,8 @@ size_t Map::getIndex(int x, int y) const
 	return static_cast<size_t>(y) * static_cast<size_t>(m_width) + static_cast<size_t>(x);
 }
 
+// print funtions -----------------------------------------
+
 void Map::printMap() const // debug function
 {
 	for (int y = 0; y < m_height; ++y)
@@ -76,6 +78,30 @@ void Map::printMap() const // debug function
 		std::cout << '\n';
 	}
 }
+
+#ifdef DEBUG
+void Map::printFloodfill(const std::vector<int>& distances) const // debug function
+{
+	for (int y = 0; y < m_height; ++y)
+	{
+		for (int x = 0; x < m_width; ++x)
+		{
+			size_t index = getIndex(x, y);
+			if (distances[index] == -1)
+			{
+				std::cout << "## "; // unreachable cells
+			}
+			else
+			{
+				std::cout << (distances[index] < 10 ? " " : "") << distances[index] << ' '; // align single digit numbers
+			}
+		}
+		std::cout << '\n';
+	}
+}
+#endif
+
+// floodfill ----------------------------------------------
 
 std::vector<int> Map::floodfill(int startX, int startY) const
 {
@@ -122,29 +148,7 @@ std::vector<int> Map::floodfill(int startX, int startY) const
 	return distances;
 }
 
-#ifdef DEBUG
-void Map::printFloodfill(const std::vector<int>& distances) const // debug function
-{
-	for (int y = 0; y < m_height; ++y)
-	{
-		for (int x = 0; x < m_width; ++x)
-		{
-			size_t index = getIndex(x, y);
-			if (distances[index] == -1)
-			{
-				std::cout << "## "; // unreachable cells
-			}
-			else
-			{
-				std::cout << (distances[index] < 10 ? " " : "") << distances[index] << ' '; // align single digit numbers
-			}
-		}
-		std::cout << '\n';
-	}
-}
-#endif
-
-//MAP GENERATION CODE (FILE MAP LOADER / PROCEDURAL MAP GENERATOR) IMPLEMENTATION
+//MAP GENERATION CODE (FILE MAP LOADER / PROCEDURAL MAP GENERATOR) IMPLEMENTATION -----------------
 
 void FileMapLoader::generate(Map& map)
 {
@@ -185,6 +189,8 @@ void FileMapLoader::generate(Map& map)
 		}
 	}
 }
+
+// --------------------------------------------------------
 
 void ProceduralMapGenerator::generate(Map& map)
 {
@@ -272,7 +278,9 @@ void ProceduralMapGenerator::generate(Map& map)
 	}
 }
 
-//MAP GENERATOR CLASS IMPLEMENTATION
+//MAP GENERATOR CLASS IMPLEMENTATION ----------------------
+
+//strategy pattern implementation
 
 MapGenerator::MapGenerator(IMapGenerator* generator) 
 	: m_generator(generator) 
@@ -294,6 +302,8 @@ void MapGenerator::generateMap(Map& map)
 		throw std::runtime_error("No map generator set");
 	}
 }
+
+// map verification function ------------------------------
 
 bool MapGenerator::verifyMap(const Map& map) const
 {
@@ -328,7 +338,7 @@ bool MapGenerator::verifyMap(const Map& map) const
 		return false;
 	}
 
-
+	//TO DO: implement floodfill
 
 	return true;
 }

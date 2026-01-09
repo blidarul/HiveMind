@@ -19,7 +19,6 @@ Simulation::Simulation()
 	, m_droneCount(0)
 	, m_robotCount(0)
 	, m_scooterCount(0)
-	, m_agentCosts(0)
 	, m_totalPackages(0)
 	, m_spawnRate(0)
 	, m_totalPenalties(0)
@@ -96,10 +95,7 @@ Simulation::Simulation()
 void Simulation::printParameters() const
 {
 	std::cout << "Simulation Parameters:\n";
-	std::cout << "Map Size: " << m_map.getWidth() << "x" << m_map.getHeight() << '\n';
 	std::cout << "Max Ticks: " << m_maxTicks << '\n';
-	std::cout << "Max Stations: " << m_map.m_stationCount << '\n';
-	std::cout << "Clients Count: " << m_map.m_clientCount << '\n';
 	std::cout << "Agents: " << m_agentCount << " (Drones: " << m_droneCount
 		<< ", Robots: " << m_robotCount << ", Scooters: " << m_scooterCount << ")\n";
 	std::cout << "Total Packages: " << m_totalPackages << '\n';
@@ -187,5 +183,5 @@ void Simulation::run()
 
 void Simulation::calculateProfit()
 {
-	m_profit = m_totalRewards - m_agentCosts - m_totalPenalties;
+	m_profit = m_totalRewards - m_totalOperationalCosts - m_totalPenalties;
 }

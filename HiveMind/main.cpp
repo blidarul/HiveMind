@@ -14,6 +14,7 @@ int main()
 		simulation.printParameters();
 		simulation.printStatus();
 #endif
+		simulation.run();
 	}
 	catch (const std::exception& e)
 	{

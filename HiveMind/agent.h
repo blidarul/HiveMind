@@ -1,6 +1,7 @@
 #pragma once
 #include "map.h"
 
+// enums --------------------------------------------------
 enum AgentSymbol
 {
 	DRONE = '^',
@@ -16,39 +17,54 @@ enum AgentState
 	CHARGING
 };
 
+// interface class ----------------------------------------
+
 class IAgent
 {
 public:
-	virtual void moveTo(mapPosition position) = 0;
-	virtual void chargeBattery() = 0;
 	virtual int getID() const = 0;
 	virtual AgentSymbol getSymbol() const = 0;
 	virtual AgentState getState() const = 0;
 	virtual mapPosition getCurrentPosition() const = 0;
+
+	virtual void move() = 0;
+	virtual void chargeBattery() = 0;
+
 	virtual ~IAgent() = default;
 };
+
+// actual agent classes -----------------------------------
 
 class Drone : public IAgent
 {
 public:
 	Drone(mapPosition startPos);
-	void moveTo(mapPosition position) override;
-	void chargeBattery() override;
+
 	int getID() const override;
 	AgentSymbol getSymbol() const override;
 	AgentState getState() const override;
 	mapPosition getCurrentPosition() const override;
-protected:
+
+	// TO DO: implement getPath function
+
+	void handleState();
+
+private:
+	void chargeBattery() override;
+	void move() override;
+	
 	static int s_nextID;
 	int m_id;
 	AgentSymbol m_symbol;
 	AgentState m_state;
 	int m_ticksAlive;
 
+	//TO DO: implement next moves vector
 	mapPosition m_currentPosition;
 	mapPosition m_targetPosition;
 	int m_speed;
 
+	//TO DO: implement package vector
 	int m_maxCapacity;
 	int m_currentLoad;
 
@@ -58,30 +74,40 @@ protected:
 
 	int m_operationCost;
 	int m_operationCostTotal;
-friend class Simulation;
 };
+
+// --------------------------
 
 class Robot : public IAgent
 {
 public:
 	Robot(mapPosition startPos);
-	void moveTo(mapPosition position) override;
-	void chargeBattery() override;
+
 	int getID() const override;
 	AgentSymbol getSymbol() const override;
 	AgentState getState() const override;
 	mapPosition getCurrentPosition() const override;
-protected:
+
+	// TO DO: implement getPath function
+
+	void handleState();
+
+private:
+	void move() override;
+	void chargeBattery() override;
+
 	static int s_nextID;
 	int m_id;
 	AgentSymbol m_symbol;
 	AgentState m_state;
 	int m_ticksAlive;
 
+	// TO DO: implement next moves vector
 	mapPosition m_currentPosition;
 	mapPosition m_targetPosition;
 	int m_speed;
 
+	//TO DO: implement package vector
 	int m_maxCapacity;
 	int m_currentLoad;
 
@@ -91,30 +117,40 @@ protected:
 
 	int m_operationCost;
 	int m_operationCostTotal;
-friend class Simulation;
 };
+
+// --------------------------
 
 class Scooter : public IAgent
 {
 public:
 	Scooter(mapPosition startPos);
-	void moveTo(mapPosition position) override;
-	void chargeBattery() override;
+
 	int getID() const override;
 	AgentSymbol getSymbol() const override;
 	AgentState getState() const override;
 	mapPosition getCurrentPosition() const override;
-protected:
+
+	//TO DO: implement getPath function
+	
+	void handleState();
+
+private:
+	void move() override;
+	void chargeBattery() override;
+
 	static int s_nextID;
 	int m_id;
 	AgentSymbol m_symbol;
 	AgentState m_state;
 	int m_ticksAlive;
 
+	//TO DO: implement next moves vector
 	mapPosition m_currentPosition;
 	mapPosition m_targetPosition;
 	int m_speed;
 
+	//TO DO: implement package vector
 	int m_maxCapacity;
 	int m_currentLoad;
 
@@ -124,5 +160,4 @@ protected:
 
 	int m_operationCost;
 	int m_operationCostTotal;
-friend class Simulation;
 };

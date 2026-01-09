@@ -11,18 +11,23 @@ class Simulation
 public:
 	Simulation();
 	~Simulation();
+
 #ifdef DEBUG
 	void printParameters() const;
 	void printStatus() const;
 	void printMap() const;
 	void printFloodfill() const;
 #endif
+
 	void run();
+
 private:
-	void advanceTick();
 	void getMap();
 	void initializeAgents();
 	void calculateProfit();
+
+	void advanceTick();
+
 	//map
 	Map m_map;
 
@@ -36,13 +41,14 @@ private:
 	int m_droneCount;
 	int m_robotCount;
 	int m_scooterCount;
-	int m_agentCosts;
+
+	// profit related parameters
 	int m_totalRewards;
 	int m_totalOperationalCosts;
+	int m_totalPenalties;
+	int m_profit;
 
 	//package related parameters
 	int m_totalPackages;
 	int m_spawnRate;
-	int m_totalPenalties;
-	int m_profit;
 };

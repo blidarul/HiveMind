@@ -24,24 +24,25 @@ public:
 	~Map();
 	int getWidth() const;
 	int getHeight() const;
-	void printMap() const;
 	mapPosition getHubPosition() const;
 	size_t getIndex(int x, int y) const;
+
 	std::vector<int> floodfill(int startX, int startY) const;
+	
+	void printMap() const;
 #ifdef DEBUG
 	void printFloodfill(const std::vector<int>& distances) const;
 #endif
 protected:
 	mapPosition m_hubPosition;
 	std::vector<mapPosition> m_stationPositions;
-	std::vector<mapPosition> m_clientPositions;
 	int m_stationCount;
+	std::vector<mapPosition> m_clientPositions;
 	int m_clientCount;
 private:
 	int m_width;
 	int m_height;
 	std::vector<CellType> m_data;
-friend class Simulation;
 friend class MapGenerator;
 friend class FileMapLoader;
 friend class ProceduralMapGenerator;
