@@ -1,18 +1,19 @@
-#include "map.h"
+#include "simulation.h"
 #include <exception>
 #include <iostream>
+
 
 int main()
 {
 	try
 	{
-		Map map(20, 20);
-
-		MapGenerator generator(new FileMapLoader());
-		generator.generateMap(map);
-
-		map.printMap();
-
+		Simulation simulation;
+#ifdef DEBUG
+		simulation.printMap();
+		simulation.printFloodfill();
+		simulation.printParameters();
+		simulation.printStatus();
+#endif
 	}
 	catch (const std::exception& e)
 	{
