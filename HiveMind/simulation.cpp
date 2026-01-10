@@ -1,6 +1,7 @@
 #include "agent.h"
 #include "map.h"
 #include "simulation.h"
+#include "hivemind.h"
 #include <fstream>
 #include <memory>
 #include <sstream>
@@ -28,6 +29,7 @@ Simulation::Simulation()
 	, m_totalRewards(0)
 	, m_totalOperationalCosts(0)
 	, m_profit(0)
+	, m_hiveMind(nullptr)
 {
 	std::ifstream setupFile("simulation_setup.txt");
 	if (!setupFile)
@@ -92,6 +94,9 @@ Simulation::Simulation()
 	// run the map and agent initialization functions
 	getMap();
 	initializeAgents();
+	
+	// Initialize HiveMind after map is ready
+	m_hiveMind = std::make_unique<HiveMind>(m_map);
 }
 
 #ifdef DEBUG
@@ -116,7 +121,17 @@ void Simulation::printStatus() const
 		std::cout << "ID: " << agent->getID()
 			<< " | Type: " << static_cast<char>(agent->getSymbol())
 			<< " | State: " << static_cast<int>(agent->getState())
-			<< " | Position: (" << pos.x << ", " << pos.y << ")\n";
+			<< " | Position: (" << pos.x << ", " << pos.y << ")";
+		
+		// Show battery for drones
+		if (agent->getSymbol() == AgentSymbol::DRONE)
+		{
+			Drone* drone = static_cast<Drone*>(agent.get());
+			// Note: We'd need a getBattery() method to show this properly
+			std::cout << " | Packages: " << agent->getPackages().size();
+		}
+		
+		std::cout << "\n";
 	}
 }
 
@@ -227,19 +242,294 @@ void Simulation::advanceTick()
 	updatePackageTicks();
 }
 
+void Simulation::updateAgents()
+{
+	// Update all agents' states
+	for (auto& agent : m_agents)
+	{
+		// Store cost before update
+		int costBefore = 0;
+		
+		if (agent->getSymbol() == AgentSymbol::DRONE)
+		{
+			Drone* drone = static_cast<Drone*>(agent.get());
+			costBefore = drone->getTotalOperationCost();
+			drone->handleState(m_map);
+			m_totalOperationalCosts += (drone->getTotalOperationCost() - costBefore);
+		}
+		else if (agent->getSymbol() == AgentSymbol::ROBOT)
+		{
+			Robot* robot = static_cast<Robot*>(agent.get());
+			costBefore = robot->getTotalOperationCost();
+			robot->handleState(m_map);
+			m_totalOperationalCosts += (robot->getTotalOperationCost() - costBefore);
+		}
+		else if (agent->getSymbol() == AgentSymbol::SCOOTER)
+		{
+			Scooter* scooter = static_cast<Scooter*>(agent.get());
+			costBefore = scooter->getTotalOperationCost();
+			scooter->handleState(m_map);
+			m_totalOperationalCosts += (scooter->getTotalOperationCost() - costBefore);
+		}
+	}
+}
+
 void Simulation::run()
 {
+	#ifdef DEBUG
+	std::cout << "=== STARTING HIVEMIND SIMULATION ===\n";
+	printParameters();
+	std::cout << "\n";
+	#endif
+	
+	int packagesAssigned = 0;
+	int packagesDelivered = 0;
+	
 	while (m_currentTick < m_maxTicks)
 	{
 		advanceTick();
 		spawnPackage();
-		printAlivePackages();
+		
+		// HiveMind assigns packages to agents
+		if (m_hiveMind && !m_packagesInBase.empty())
+		{
+			size_t beforeAssignment = m_packagesInBase.size();
+			m_hiveMind->assignPackages(m_packagesInBase, m_agents);
+			size_t afterAssignment = m_packagesInBase.size();
+			
+			int justAssigned = static_cast<int>(beforeAssignment - afterAssignment);
+			if (justAssigned > 0)
+			{
+				packagesAssigned += justAssigned;
+				#ifdef DEBUG
+				std::cout << "[Tick " << m_currentTick << "] HiveMind assigned " 
+					<< justAssigned << " package(s) to agents.\n";
+				#endif
+			}
+		}
+		
+		// Update all agents
+		updateAgents();
+		
+		// Collect rewards from agents
+		for (auto& agent : m_agents)
+		{
+			if (agent->getSymbol() == AgentSymbol::DRONE)
+			{
+				Drone* drone = static_cast<Drone*>(agent.get());
+				// TODO: Need a method to get and clear personal rewards
+			}
+		}
+		
+		#ifdef DEBUG
+		if (m_currentTick % 10 == 0) // Print every 10 ticks to reduce spam
+		{
+			printAlivePackages();
+		}
+		#endif
 	}
+	
+	// Calculate penalties at end of simulation
+	calculatePenalties();
+	calculateProfit();
+	
+	// Generate simulation report
+	generateReport();
+	
+	#ifdef DEBUG
+	std::cout << "\n=== SIMULATION COMPLETE ===\n";
+	std::cout << "Total Packages Assigned: " << packagesAssigned << "\n";
+	std::cout << "Total Rewards: $" << m_totalRewards << "\n";
+	std::cout << "Total Operational Costs: $" << m_totalOperationalCosts << "\n";
+	std::cout << "Total Penalties: $" << m_totalPenalties << "\n";
+	std::cout << "Final Profit: $" << m_profit << "\n";
+	std::cout << "Report saved to simulation.txt\n";
+	#endif
 }
 
 void Simulation::calculateProfit()
 {
 	m_profit = m_totalRewards - m_totalOperationalCosts - m_totalPenalties;
+}
+
+void Simulation::calculatePenalties()
+{
+	// Count dead agents
+	int deadAgents = 0;
+	for (const auto& agent : m_agents)
+	{
+		if (agent->getState() == AgentState::DEAD)
+		{
+			deadAgents++;
+			m_totalPenalties += DEAD_AGENT_PENALTY;
+		}
+	}
+	
+	// Collect rewards from all agents
+	for (auto& agent : m_agents)
+	{
+		if (agent->getSymbol() == AgentSymbol::DRONE)
+		{
+			Drone* drone = static_cast<Drone*>(agent.get());
+			m_totalRewards += drone->getPersonalRewards();
+		}
+		else if (agent->getSymbol() == AgentSymbol::ROBOT)
+		{
+			Robot* robot = static_cast<Robot*>(agent.get());
+			m_totalRewards += robot->getPersonalRewards();
+		}
+		else if (agent->getSymbol() == AgentSymbol::SCOOTER)
+		{
+			Scooter* scooter = static_cast<Scooter*>(agent.get());
+			m_totalRewards += scooter->getPersonalRewards();
+		}
+	}
+	
+	// Penalize undelivered packages
+	int undeliveredPackages = static_cast<int>(m_packagesInBase.size());
+	for (const auto& agent : m_agents)
+	{
+		undeliveredPackages += static_cast<int>(agent->getPackages().size());
+	}
+	
+	m_totalPenalties += undeliveredPackages * PACKAGE_NOT_DELIVERED_PENALTY;
+	
+	#ifdef DEBUG
+	std::cout << "\n--- FINAL STATISTICS ---\n";
+	std::cout << "Dead Agents: " << deadAgents << " (Penalty: $" << (deadAgents * DEAD_AGENT_PENALTY) << ")\n";
+	std::cout << "Undelivered Packages: " << undeliveredPackages 
+		<< " (Penalty: $" << (undeliveredPackages * PACKAGE_NOT_DELIVERED_PENALTY) << ")\n";
+	#endif
+}
+
+void Simulation::generateReport()
+{
+	std::ofstream report("simulation.txt");
+	
+	if (!report.is_open())
+	{
+		std::cerr << "Error: Could not create simulation.txt report\n";
+		return;
+	}
+	
+	// Header
+	report << "========================================\n";
+	report << "   HIVEMIND SIMULATION REPORT\n";
+	report << "========================================\n\n";
+	
+	// Simulation Parameters
+	report << "SIMULATION PARAMETERS:\n";
+	report << "  Map Size: " << m_map.getWidth() << "x" << m_map.getHeight() << "\n";
+	report << "  Total Ticks: " << m_maxTicks << "\n";
+	report << "  Clients: " << m_map.getClientCount() << "\n";
+	report << "  Charging Stations: " << m_map.getStationCount() << "\n\n";
+	
+	// Fleet Configuration
+	report << "FLEET CONFIGURATION:\n";
+	report << "  Drones: " << m_droneCount << "\n";
+	report << "  Robots: " << m_robotCount << "\n";
+	report << "  Scooters: " << m_scooterCount << "\n";
+	report << "  Total Agents: " << m_agentCount << "\n\n";
+	
+	// Package Statistics
+	report << "PACKAGE STATISTICS:\n";
+	report << "  Total Packages Spawned: " << m_packagesSpawned << "\n";
+	
+	int deliveredPackages = 0;
+	int packagesOnAgents = 0;
+	for (const auto& agent : m_agents)
+	{
+		packagesOnAgents += static_cast<int>(agent->getPackages().size());
+		if (agent->getSymbol() == AgentSymbol::DRONE)
+		{
+			Drone* drone = static_cast<Drone*>(agent.get());
+			deliveredPackages += drone->getPersonalRewards() > 0 ? 1 : 0;
+		}
+		else if (agent->getSymbol() == AgentSymbol::ROBOT)
+		{
+			Robot* robot = static_cast<Robot*>(agent.get());
+			deliveredPackages += robot->getPersonalRewards() > 0 ? 1 : 0;
+		}
+		else if (agent->getSymbol() == AgentSymbol::SCOOTER)
+		{
+			Scooter* scooter = static_cast<Scooter*>(agent.get());
+			deliveredPackages += scooter->getPersonalRewards() > 0 ? 1 : 0;
+		}
+	}
+	
+	int undeliveredPackages = static_cast<int>(m_packagesInBase.size()) + packagesOnAgents;
+	
+	report << "  Packages Delivered: " << (m_packagesSpawned - undeliveredPackages) << "\n";
+	report << "  Packages in Base: " << m_packagesInBase.size() << "\n";
+	report << "  Packages on Agents: " << packagesOnAgents << "\n";
+	report << "  Delivery Success Rate: " 
+		<< (m_packagesSpawned > 0 ? (100.0 * (m_packagesSpawned - undeliveredPackages) / m_packagesSpawned) : 0.0) 
+		<< "%\n\n";
+	
+	// Agent Status
+	report << "AGENT STATUS:\n";
+	int deadAgents = 0;
+	int idleAgents = 0;
+	int movingAgents = 0;
+	int chargingAgents = 0;
+	
+	for (const auto& agent : m_agents)
+	{
+		switch (agent->getState())
+		{
+		case AgentState::DEAD: deadAgents++; break;
+		case AgentState::IDLE: idleAgents++; break;
+		case AgentState::MOVING: movingAgents++; break;
+		case AgentState::CHARGING: chargingAgents++; break;
+		}
+	}
+	
+	report << "  Dead: " << deadAgents << "\n";
+	report << "  Idle: " << idleAgents << "\n";
+	report << "  Moving: " << movingAgents << "\n";
+	report << "  Charging: " << chargingAgents << "\n\n";
+	
+	// Financial Summary
+	report << "========================================\n";
+	report << "FINANCIAL SUMMARY:\n";
+	report << "========================================\n";
+	report << "  Total Rewards: $" << m_totalRewards << "\n";
+	report << "  Operational Costs: -$" << m_totalOperationalCosts << "\n";
+	report << "  Penalties: -$" << m_totalPenalties << "\n";
+	report << "    - Dead Agents (" << deadAgents << "): -$" << (deadAgents * DEAD_AGENT_PENALTY) << "\n";
+	report << "    - Undelivered Packages (" << undeliveredPackages << "): -$" 
+		<< (undeliveredPackages * PACKAGE_NOT_DELIVERED_PENALTY) << "\n";
+	report << "----------------------------------------\n";
+	report << "  NET PROFIT: $" << m_profit << "\n";
+	report << "========================================\n\n";
+	
+	// Performance Analysis
+	report << "PERFORMANCE ANALYSIS:\n";
+	if (m_profit > 0)
+	{
+		report << "  Status: PROFITABLE ?\n";
+	}
+	else if (m_profit == 0)
+	{
+		report << "  Status: BREAK EVEN\n";
+	}
+	else
+	{
+		report << "  Status: LOSS\n";
+	}
+	
+	float profitPerTick = static_cast<float>(m_profit) / m_maxTicks;
+	report << "  Profit per Tick: $" << profitPerTick << "\n";
+	
+	float costEfficiency = m_totalRewards > 0 ? 
+		(100.0f * m_totalOperationalCosts / m_totalRewards) : 0.0f;
+	report << "  Cost Efficiency: " << costEfficiency << "%\n";
+	
+	report << "\n========================================\n";
+	report << "End of Report\n";
+	report << "========================================\n";
+	
+	report.close();
 }
 
 void Simulation::spawnPackage()

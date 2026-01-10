@@ -1,6 +1,7 @@
 #pragma once
 #include "agent.h"
 #include "map.h"
+#include "hivemind.h"
 #include <memory>
 #include <vector>
 
@@ -26,8 +27,11 @@ private:
 	void getMap();
 	void initializeAgents();
 	void calculateProfit();
+	void calculatePenalties();
+	void generateReport();
 	void spawnPackage();
 	void updatePackageTicks();
+	void updateAgents();
 
 	void advanceTick();
 
@@ -57,4 +61,7 @@ private:
 	int m_packagesSpawned;
 	int m_spawnRate;
 	int m_ticksSinceLastSpawn;
+
+	// HiveMind algorithm
+	std::unique_ptr<HiveMind> m_hiveMind;
 };

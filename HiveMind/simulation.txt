@@ -1,0 +1,49 @@
+========================================
+   HIVEMIND SIMULATION REPORT
+========================================
+
+SIMULATION PARAMETERS:
+  Map Size: 20x20
+  Total Ticks: 1000
+  Clients: 10
+  Charging Stations: 3
+
+FLEET CONFIGURATION:
+  Drones: 3
+  Robots: 2
+  Scooters: 1
+  Total Agents: 6
+
+PACKAGE STATISTICS:
+  Total Packages Spawned: 50
+  Packages Delivered: 46
+  Packages in Base: 0
+  Packages on Agents: 4
+  Delivery Success Rate: 92%
+
+AGENT STATUS:
+  Dead: 0
+  Idle: 2
+  Moving: 4
+  Charging: 0
+
+========================================
+FINANCIAL SUMMARY:
+========================================
+  Total Rewards: $21402
+  Operational Costs: -$1482
+  Penalties: -$800
+    - Dead Agents (0): -$0
+    - Undelivered Packages (4): -$800
+----------------------------------------
+  NET PROFIT: $19120
+========================================
+
+PERFORMANCE ANALYSIS:
+  Status: PROFITABLE ?
+  Profit per Tick: $19.12
+  Cost Efficiency: 6.92459%
+
+========================================
+End of Report
+========================================

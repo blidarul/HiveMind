@@ -149,21 +149,26 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="agent.cpp" />
+    <ClCompile Include="hivemind.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="package.cpp" />
     <ClCompile Include="map.cpp" />
     <ClCompile Include="simulation.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\Proiect OOP 2025 (2).pdf" />
     <None Include="..\README.md" />
   </ItemGroup>
   <ItemGroup>
+    <Text Include="cerinta.txt" />
     <Text Include="debug_map.txt" />
+    <Text Include="simulation.txt" />
     <Text Include="simulation_setup.txt" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="agent.h" />
     <ClInclude Include="constants.h" />
+    <ClInclude Include="hivemind.h" />
     <ClInclude Include="package.h" />
     <ClInclude Include="simulation.h" />
     <ClInclude Include="map.h" />

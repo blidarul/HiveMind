@@ -28,15 +28,21 @@
     <ClCompile Include="simulation.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="hivemind.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\README.md">
       <Filter>github</Filter>
     </None>
+    <None Include="..\Proiect OOP 2025 (2).pdf" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="debug_map.txt" />
     <Text Include="simulation_setup.txt" />
+    <Text Include="cerinta.txt" />
+    <Text Include="simulation.txt" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="simulation.h">
@@ -52,6 +58,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="package.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="hivemind.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

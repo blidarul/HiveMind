@@ -20,7 +20,7 @@ constexpr float BATTERY_RECHARGE_RATE = 0.25;
 
 // drone constants
 constexpr int DRONE_SPEED = 3;
-constexpr int DRONE_MAX_BATTERY = 100;
+constexpr int DRONE_MAX_BATTERY = 100; 
 constexpr int DRONE_BATTERY_CONSUMPTION_RATE = 10;
 constexpr int DRONE_OPERATION_COST = 15;
 constexpr int DRONE_MAX_CAPACITY = 1;

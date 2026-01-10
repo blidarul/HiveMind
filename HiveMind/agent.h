@@ -1,15 +1,15 @@
 #pragma once
 #include "map.h"
 #include "package.h"
-#include <vector>
 #include <memory>
+#include <vector>
 
 // enums --------------------------------------------------
 enum AgentSymbol
 {
 	DRONE = '^',
 	ROBOT = 'R',
-	SCOOTER = 's'
+	SCOOTER = 'S'
 };
 
 enum AgentState
@@ -30,6 +30,8 @@ public:
 	virtual AgentState getState() const = 0;
 	virtual mapPosition getCurrentPosition() const = 0;
 	virtual std::vector<std::unique_ptr<Package>>& getPackages() = 0;
+	virtual int getCurrentBattery() const = 0;
+	virtual int getMaxBattery() const = 0;
 
 	virtual void move() = 0;
 	virtual void chargeBattery() = 0;
@@ -49,10 +51,13 @@ public:
 	AgentState getState() const override;
 	mapPosition getCurrentPosition() const override;
 	std::vector<std::unique_ptr<Package>>& getPackages() override;
+	int getCurrentBattery() const override;
+	int getMaxBattery() const override;
 
 	void handleState(const Map& map);
 	bool assignPackage(std::unique_ptr<Package> package);
 	int getTotalOperationCost() const;
+	int getPersonalRewards() const;
 
 private:
 	bool checkDeath();
@@ -61,6 +66,8 @@ private:
 	bool deliverPackage();
 	void pathfindToTarget();
 	void pathfindToHub(const Map& map);
+	bool shouldVisitChargingStation(const Map& map) const;
+	void routeToNearestChargingStation(const Map& map);
 
 	static int s_nextID;
 	int m_id;
@@ -84,6 +91,9 @@ private:
 
 	int m_operationCost;
 	int m_operationCostTotal;
+	
+	bool m_needsCharging;
+	mapPosition m_chargingStationTarget;
 };
 
 // --------------------------
@@ -98,13 +108,23 @@ public:
 	AgentState getState() const override;
 	mapPosition getCurrentPosition() const override;
 	std::vector<std::unique_ptr<Package>>& getPackages() override;
+	int getCurrentBattery() const override;
+	int getMaxBattery() const override;
 
-	void handleState();
+	void handleState(const Map& map);
+	bool assignPackage(std::unique_ptr<Package> package, const Map& map);
+	int getTotalOperationCost() const;
+	int getPersonalRewards() const;
 
 private:
 	bool checkDeath();
 	void move() override;
 	void chargeBattery() override;
+	bool deliverPackage();
+	void pathfindToTarget(const Map& map);
+	void pathfindToHub(const Map& map);
+	bool shouldVisitChargingStation(const Map& map) const;
+	void routeToNearestChargingStation(const Map& map);
 
 	static int s_nextID;
 	int m_id;
@@ -120,6 +140,7 @@ private:
 	std::vector<std::unique_ptr<Package>> m_packages;
 	int m_maxCapacity;
 	int m_currentLoad;
+	int m_personalRewards;
 
 	int m_maxBattery;
 	int m_currentBattery;
@@ -127,6 +148,9 @@ private:
 
 	int m_operationCost;
 	int m_operationCostTotal;
+	
+	bool m_needsCharging;
+	mapPosition m_chargingStationTarget;
 };
 
 // --------------------------
@@ -141,13 +165,23 @@ public:
 	AgentState getState() const override;
 	mapPosition getCurrentPosition() const override;
 	std::vector<std::unique_ptr<Package>>& getPackages() override;
+	int getCurrentBattery() const override;
+	int getMaxBattery() const override;
 	
-	void handleState();
+	void handleState(const Map& map);
+	bool assignPackage(std::unique_ptr<Package> package, const Map& map);
+	int getTotalOperationCost() const;
+	int getPersonalRewards() const;
 
 private:
 	bool checkDeath();
 	void move() override;
 	void chargeBattery() override;
+	bool deliverPackage();
+	void pathfindToTarget(const Map& map);
+	void pathfindToHub(const Map& map);
+	bool shouldVisitChargingStation(const Map& map) const;
+	void routeToNearestChargingStation(const Map& map);
 
 	static int s_nextID;
 	int m_id;
@@ -163,6 +197,7 @@ private:
 	std::vector<std::unique_ptr<Package>> m_packages;
 	int m_maxCapacity;
 	int m_currentLoad;
+	int m_personalRewards;
 
 	int m_maxBattery;
 	int m_currentBattery;
@@ -170,4 +205,7 @@ private:
 
 	int m_operationCost;
 	int m_operationCostTotal;
+	
+	bool m_needsCharging;
+	mapPosition m_chargingStationTarget;
 };
