@@ -16,33 +16,33 @@ FLEET CONFIGURATION:
 
 PACKAGE STATISTICS:
   Total Packages Spawned: 50
-  Packages Delivered: 46
-  Packages in Base: 0
-  Packages on Agents: 4
-  Delivery Success Rate: 92%
+  Packages Delivered: 42
+  Packages in Base: 3
+  Packages on Agents: 5
+  Delivery Success Rate: 84%
 
 AGENT STATUS:
   Dead: 0
-  Idle: 2
-  Moving: 4
+  Idle: 0
+  Moving: 6
   Charging: 0
 
 ========================================
 FINANCIAL SUMMARY:
 ========================================
-  Total Rewards: $21402
-  Operational Costs: -$1482
-  Penalties: -$800
+  Total Rewards: $21259
+  Operational Costs: -$1643
+  Penalties: -$1600
     - Dead Agents (0): -$0
-    - Undelivered Packages (4): -$800
+    - Undelivered Packages (8): -$1600
 ----------------------------------------
-  NET PROFIT: $19120
+  NET PROFIT: $18016
 ========================================
 
 PERFORMANCE ANALYSIS:
   Status: PROFITABLE ?
-  Profit per Tick: $19.12
-  Cost Efficiency: 6.92459%
+  Profit per Tick: $18.016
+  Cost Efficiency: 7.72849%
 
 ========================================
 End of Report

@@ -394,25 +394,50 @@ void Robot::pathfindToTarget(const Map& map)
 {
 	m_nextMoves.clear();
 
-	// simple pathfinding
+	std::vector<int> distances = map.floodfill(m_targetPosition.x, m_targetPosition.y);
+	
 	mapPosition current = m_currentPosition;
-
+	
 	while (current.x != m_targetPosition.x || current.y != m_targetPosition.y)
 	{
-		mapPosition move = { 0, 0 };
-
-		if (current.x < m_targetPosition.x)
-			move.x = 1;
-		else if (current.x > m_targetPosition.x)
-			move.x = -1;
-		else if (current.y < m_targetPosition.y)
-			move.y = 1;
-		else if (current.y > m_targetPosition.y)
-			move.y = -1;
-
-		m_nextMoves.push_back(move);
-		current.x += move.x;
-		current.y += move.y;
+		size_t currentIndex = map.getIndex(current.x, current.y);
+		int currentDist = distances[currentIndex];
+		
+		const std::vector<mapPosition> directions = {{0,1}, {1,0}, {0,-1}, {-1,0}};
+		
+		mapPosition bestMove = {0, 0};
+		int bestDistance = currentDist;
+		
+		for (const auto& dir : directions)
+		{
+			int newX = current.x + dir.x;
+			int newY = current.y + dir.y;
+			
+			if (newX >= 0 && newX < map.getWidth() && newY >= 0 && newY < map.getHeight())
+			{
+				size_t neighborIndex = map.getIndex(newX, newY);
+				int neighborDist = distances[neighborIndex];
+				
+				if (neighborDist != -1 && neighborDist < bestDistance)
+				{
+					bestDistance = neighborDist;
+					bestMove = dir;
+				}
+			}
+		}
+		
+		if (bestMove.x == 0 && bestMove.y == 0)
+		{
+			#ifdef DEBUG
+			std::cout << "  [PATHFIND ERROR] Robot " << m_id << " stuck at (" 
+				<< current.x << ", " << current.y << ") - no valid path to target\n";
+			#endif
+			break;
+		}
+		
+		m_nextMoves.push_back(bestMove);
+		current.x += bestMove.x;
+		current.y += bestMove.y;
 	}
 }
 
@@ -420,27 +445,50 @@ void Scooter::pathfindToTarget(const Map& map)
 {
 	m_nextMoves.clear();
 
-	// Simple greedy pathfinding - move towards target
-	// This is a simplified version for ground units
+	std::vector<int> distances = map.floodfill(m_targetPosition.x, m_targetPosition.y);
+	
 	mapPosition current = m_currentPosition;
-
+	
 	while (current.x != m_targetPosition.x || current.y != m_targetPosition.y)
 	{
-		mapPosition move = { 0, 0 };
-
-		// Prefer horizontal movement first
-		if (current.x < m_targetPosition.x)
-			move.x = 1;
-		else if (current.x > m_targetPosition.x)
-			move.x = -1;
-		else if (current.y < m_targetPosition.y)
-			move.y = 1;
-		else if (current.y > m_targetPosition.y)
-			move.y = -1;
-
-		m_nextMoves.push_back(move);
-		current.x += move.x;
-		current.y += move.y;
+		size_t currentIndex = map.getIndex(current.x, current.y);
+		int currentDist = distances[currentIndex];
+		
+		const std::vector<mapPosition> directions = {{0,1}, {1,0}, {0,-1}, {-1,0}};
+		
+		mapPosition bestMove = {0, 0};
+		int bestDistance = currentDist;
+		
+		for (const auto& dir : directions)
+		{
+			int newX = current.x + dir.x;
+			int newY = current.y + dir.y;
+			
+			if (newX >= 0 && newX < map.getWidth() && newY >= 0 && newY < map.getHeight())
+			{
+				size_t neighborIndex = map.getIndex(newX, newY);
+				int neighborDist = distances[neighborIndex];
+				
+				if (neighborDist != -1 && neighborDist < bestDistance)
+				{
+					bestDistance = neighborDist;
+					bestMove = dir;
+				}
+			}
+		}
+		
+		if (bestMove.x == 0 && bestMove.y == 0)
+		{
+			#ifdef DEBUG
+			std::cout << "  [PATHFIND ERROR] Scooter " << m_id << " stuck at (" 
+				<< current.x << ", " << current.y << ") - no valid path to target\n";
+			#endif
+			break;
+		}
+		
+		m_nextMoves.push_back(bestMove);
+		current.x += bestMove.x;
+		current.y += bestMove.y;
 	}
 }
 

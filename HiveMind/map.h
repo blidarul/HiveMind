@@ -34,6 +34,7 @@ public:
 	const std::vector<int>& getFloodfillData() const;
 
 	void computeFloodfill(int startX, int startY);
+	std::vector<int> floodfill(int startX, int startY) const;
 	
 	void printMap() const;
 #ifdef DEBUG
@@ -48,8 +49,6 @@ protected:
 	int m_clientCount;
 
 private:
-	std::vector<int> floodfill(int startX, int startY) const;
-
 	int m_width;
 	int m_height;
 	std::vector<CellType> m_data;
