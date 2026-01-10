@@ -53,19 +53,21 @@ public:
 	std::vector<std::unique_ptr<Package>>& getPackages() override;
 	int getCurrentBattery() const override;
 	int getMaxBattery() const override;
+	int getPersonalRewards() const;
+	int getTotalOperationCost() const;
 
 	void handleState(const Map& map);
 	bool assignPackage(std::unique_ptr<Package> package);
-	int getTotalOperationCost() const;
-	int getPersonalRewards() const;
 
 private:
 	bool checkDeath();
-	void chargeBattery() override;
 	void move() override;
 	bool deliverPackage();
+
 	void pathfindToTarget();
 	void pathfindToHub(const Map& map);
+
+	void chargeBattery() override;
 	bool shouldVisitChargingStation(const Map& map) const;
 	void routeToNearestChargingStation(const Map& map);
 
@@ -110,19 +112,21 @@ public:
 	std::vector<std::unique_ptr<Package>>& getPackages() override;
 	int getCurrentBattery() const override;
 	int getMaxBattery() const override;
+	int getTotalOperationCost() const;
+	int getPersonalRewards() const;
 
 	void handleState(const Map& map);
 	bool assignPackage(std::unique_ptr<Package> package, const Map& map);
-	int getTotalOperationCost() const;
-	int getPersonalRewards() const;
 
 private:
 	bool checkDeath();
 	void move() override;
-	void chargeBattery() override;
 	bool deliverPackage();
+
 	void pathfindToTarget(const Map& map);
 	void pathfindToHub(const Map& map);
+
+	void chargeBattery() override;
 	bool shouldVisitChargingStation(const Map& map) const;
 	void routeToNearestChargingStation(const Map& map);
 
@@ -167,19 +171,21 @@ public:
 	std::vector<std::unique_ptr<Package>>& getPackages() override;
 	int getCurrentBattery() const override;
 	int getMaxBattery() const override;
+	int getTotalOperationCost() const;
+	int getPersonalRewards() const;
 	
 	void handleState(const Map& map);
 	bool assignPackage(std::unique_ptr<Package> package, const Map& map);
-	int getTotalOperationCost() const;
-	int getPersonalRewards() const;
 
 private:
 	bool checkDeath();
 	void move() override;
-	void chargeBattery() override;
 	bool deliverPackage();
+
 	void pathfindToTarget(const Map& map);
 	void pathfindToHub(const Map& map);
+
+	void chargeBattery() override;
 	bool shouldVisitChargingStation(const Map& map) const;
 	void routeToNearestChargingStation(const Map& map);
 

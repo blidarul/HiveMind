@@ -1,7 +1,8 @@
 #pragma once
 #include "agent.h"
-#include "map.h"
 #include "hivemind.h"
+#include "map.h"
+#include "package.h"
 #include <memory>
 #include <vector>
 
@@ -62,6 +63,6 @@ private:
 	int m_spawnRate;
 	int m_ticksSinceLastSpawn;
 
-	// HiveMind algorithm
+	// hivemind
 	std::unique_ptr<HiveMind> m_hiveMind;
 };

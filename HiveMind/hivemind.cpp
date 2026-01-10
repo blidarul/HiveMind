@@ -8,26 +8,22 @@
 #include <iostream>
 #endif
 
-// Strategy Pattern Implementation: HiveMind algorithm
 HiveMind::HiveMind(const Map& map)
     : m_map(map)
 {
 }
 
-// Calculate Manhattan distance (for drones) or use floodfill distance (for ground units)
 int HiveMind::calculateDistance(mapPosition from, mapPosition to) const
 {
-    // Manhattan distance as base estimate
+    // estimate
     return std::abs(to.x - from.x) + std::abs(to.y - from.y);
 }
 
-// Find nearest charging station from given position
 mapPosition HiveMind::findNearestChargingStation(mapPosition from) const
 {
-    mapPosition nearestStation = m_map.getHubPosition(); // Hub is always a charging station
+    mapPosition nearestStation = m_map.getHubPosition();
     int minDistance = calculateDistance(from, nearestStation);
     
-    // Check all stations
     for (const auto& station : m_map.getStationPositions())
     {
         int distance = calculateDistance(from, station);
@@ -41,7 +37,6 @@ mapPosition HiveMind::findNearestChargingStation(mapPosition from) const
     return nearestStation;
 }
 
-// Calculate battery needed for a trip segment
 int HiveMind::calculateBatteryNeeded(IAgent* agent, mapPosition from, mapPosition to) const
 {
     int distance = calculateDistance(from, to);
@@ -59,19 +54,16 @@ int HiveMind::calculateBatteryNeeded(IAgent* agent, mapPosition from, mapPositio
     return distance * batteryConsumption;
 }
 
-// Check if agent needs charging station routing
 bool HiveMind::needsCharging(IAgent* agent, const Package& package) const
 {
     mapPosition agentPos = agent->getCurrentPosition();
     mapPosition packageDest = package.getDestination();
     mapPosition hubPos = m_map.getHubPosition();
     
-    // Calculate battery needed for direct route
     int batteryToDestination = calculateBatteryNeeded(agent, agentPos, packageDest);
     int batteryToHub = calculateBatteryNeeded(agent, packageDest, hubPos);
     int totalBatteryNeeded = batteryToDestination + batteryToHub;
     
-    // Get agent's max battery
     int maxBattery = 0;
     AgentSymbol symbol = agent->getSymbol();
     if (symbol == AgentSymbol::DRONE)
@@ -81,11 +73,9 @@ bool HiveMind::needsCharging(IAgent* agent, const Package& package) const
     else if (symbol == AgentSymbol::SCOOTER)
         maxBattery = SCOOTER_MAX_BATTERY;
     
-    // Need charging if direct route uses more than 70% of max battery
     return totalBatteryNeeded > (maxBattery * 0.7f);
 }
 
-// Calculate total operational cost for this delivery
 int HiveMind::calculateTripCost(IAgent* agent, const Package& package) const
 {
     mapPosition agentPos = agent->getCurrentPosition();
@@ -94,10 +84,8 @@ int HiveMind::calculateTripCost(IAgent* agent, const Package& package) const
     
     int totalDistance = 0;
     
-    // Check if routing through charging station is needed
     if (needsCharging(agent, package))
     {
-        // Route: Agent -> Charging Station -> Destination -> Hub
         mapPosition chargingStation = findNearestChargingStation(agentPos);
         
         totalDistance += calculateDistance(agentPos, chargingStation);
@@ -111,46 +99,39 @@ int HiveMind::calculateTripCost(IAgent* agent, const Package& package) const
     }
     else
     {
-        // Direct route: Agent -> Destination -> Hub
         totalDistance += calculateDistance(agentPos, packageDest);
         totalDistance += calculateDistance(packageDest, hubPos);
     }
     
-    // Estimate ticks needed (distance / speed)
     int speed = 1;
     AgentSymbol symbol = agent->getSymbol();
     if (symbol == AgentSymbol::DRONE) speed = DRONE_SPEED;
     else if (symbol == AgentSymbol::ROBOT) speed = ROBOT_SPEED;
     else if (symbol == AgentSymbol::SCOOTER) speed = SCOOTER_SPEED;
     
-    int ticksNeeded = (totalDistance + speed - 1) / speed; // Ceiling division
+    int ticksNeeded = (totalDistance + speed - 1) / speed;
     
-    // Calculate operational cost
     int operationCostPerTick = 0;
     if (symbol == AgentSymbol::DRONE) operationCostPerTick = DRONE_OPERATION_COST;
     else if (symbol == AgentSymbol::ROBOT) operationCostPerTick = ROBOT_OPERATION_COST;
     else if (symbol == AgentSymbol::SCOOTER) operationCostPerTick = SCOOTER_OPERATION_COST;
     
-    // Add charging time cost (estimated 4 ticks to fully charge)
     if (needsCharging(agent, package))
     {
-        ticksNeeded += 4; // Charging time
+        ticksNeeded += 4;
     }
     
     return ticksNeeded * operationCostPerTick;
 }
 
-// Check if agent has enough battery to complete the delivery (with charging)
 bool HiveMind::canCompleteDelivery(IAgent* agent, const Package& package) const
 {
     mapPosition agentPos = agent->getCurrentPosition();
     mapPosition packageDest = package.getDestination();
     
-    // Get agent's ACTUAL current battery (not just max)
     int currentBattery = agent->getCurrentBattery();
     int maxBattery = agent->getMaxBattery();
     
-    // If agent is critically low, reject assignment
     if (currentBattery < maxBattery * 0.2f)
     {
         #ifdef DEBUG
@@ -159,14 +140,12 @@ bool HiveMind::canCompleteDelivery(IAgent* agent, const Package& package) const
         return false;
     }
     
-    // With charging station routing, validate each segment
     if (needsCharging(agent, package))
     {
-        // Check: Agent -> Charging Station (using CURRENT battery)
         mapPosition chargingStation = findNearestChargingStation(agentPos);
         int batteryToStation = calculateBatteryNeeded(agent, agentPos, chargingStation);
         
-        if (batteryToStation > currentBattery) // Use actual battery, not max
+        if (batteryToStation > currentBattery)
         {
             #ifdef DEBUG
             std::cout << "    [BATTERY CHECK] Not enough battery to reach charging station! (Need: " 
@@ -175,7 +154,6 @@ bool HiveMind::canCompleteDelivery(IAgent* agent, const Package& package) const
             return false;
         }
         
-        // Check: Charging Station -> Destination (after full charge)
         int batteryToDestination = calculateBatteryNeeded(agent, chargingStation, packageDest);
         
         if (batteryToDestination > maxBattery * 0.95f)
@@ -186,13 +164,11 @@ bool HiveMind::canCompleteDelivery(IAgent* agent, const Package& package) const
             return false;
         }
         
-        // Check: Destination -> Hub (or another charging station)
         mapPosition hubPos = m_map.getHubPosition();
         int batteryToHub = calculateBatteryNeeded(agent, packageDest, hubPos);
         
         if (batteryToHub > maxBattery * 0.95f)
         {
-            // Try finding a charging station near destination
             mapPosition nearStation = findNearestChargingStation(packageDest);
             int batteryToNearStation = calculateBatteryNeeded(agent, packageDest, nearStation);
             
@@ -209,7 +185,6 @@ bool HiveMind::canCompleteDelivery(IAgent* agent, const Package& package) const
     }
     else
     {
-        // Direct route - check if CURRENT battery is sufficient
         int batteryToDestination = calculateBatteryNeeded(agent, agentPos, packageDest);
         mapPosition hubPos = m_map.getHubPosition();
         int batteryToHub = calculateBatteryNeeded(agent, packageDest, hubPos);
@@ -228,60 +203,48 @@ bool HiveMind::canCompleteDelivery(IAgent* agent, const Package& package) const
     }
 }
 
-// Score function: lower is better (represents cost-benefit ratio)
 float HiveMind::calculateAgentScore(IAgent* agent, const Package& package, int distance) const
 {
-    // Can't assign to agents that aren't idle or are dead
     if (agent->getState() != AgentState::IDLE)
         return std::numeric_limits<float>::max();
     
-    // Check if agent already has packages
     if (!agent->getPackages().empty())
         return std::numeric_limits<float>::max();
     
-    // Calculate operational cost (includes charging station routing)
     int tripCost = calculateTripCost(agent, package);
     int reward = package.getReward();
-    
-    // Score = (Cost / Reward) * Distance factor * Urgency factor * Battery factor
-    // Lower score is better
+
     float costRatio = static_cast<float>(tripCost) / static_cast<float>(reward);
     float distanceFactor = 1.0f + (static_cast<float>(distance) / 100.0f);
     
-    // Consider urgency (remaining ticks)
     int remainingTicks = package.getRemainingTicks();
     float urgencyFactor = 1.0f;
     if (remainingTicks < 10) {
-        urgencyFactor = 0.5f; // Prioritize urgent packages
+        urgencyFactor = 0.5f;
     } else if (remainingTicks < 15) {
         urgencyFactor = 0.75f;
     }
     
-    // Penalize if charging is needed (adds complexity and time)
     float chargingPenalty = needsCharging(agent, package) ? 1.2f : 1.0f;
     
-    // NEW: Battery efficiency factor - prefer agents with fuller batteries
     float batteryPercent = static_cast<float>(agent->getCurrentBattery()) / agent->getMaxBattery();
-    float batteryFactor = 2.0f - batteryPercent; // Range: 1.0 (full) to 2.0 (empty)
-    // Agents with less battery get worse score (higher value)
+    float batteryFactor = 2.0f - batteryPercent;
     
-    // NEW: Speed bonus - faster agents get better scores for urgent packages
     float speedBonus = 1.0f;
     if (remainingTicks < 10)
     {
         AgentSymbol symbol = agent->getSymbol();
         if (symbol == AgentSymbol::DRONE)
-            speedBonus = 0.8f; // Prefer drones for urgent deliveries
+            speedBonus = 0.8f;
         else if (symbol == AgentSymbol::SCOOTER)
             speedBonus = 0.9f;
-        else // Robot
-            speedBonus = 1.1f; // Penalize slow robots for urgent packages
+        else
+            speedBonus = 1.1f;
     }
     
     return costRatio * distanceFactor * urgencyFactor * chargingPenalty * batteryFactor * speedBonus;
 }
 
-// Select the best agent for a given package
 IAgent* HiveMind::selectBestAgent(
     const Package& package,
     std::vector<std::unique_ptr<IAgent>>& agents)
@@ -299,7 +262,6 @@ IAgent* HiveMind::selectBestAgent(
     
     for (auto& agent : agents)
     {
-        // Skip dead agents
         if (agent->getState() == AgentState::DEAD)
         {
             #ifdef DEBUG
@@ -308,7 +270,6 @@ IAgent* HiveMind::selectBestAgent(
             continue;
         }
         
-        // Skip agents that are already busy
         if (agent->getState() != AgentState::IDLE)
         {
             #ifdef DEBUG
@@ -321,22 +282,17 @@ IAgent* HiveMind::selectBestAgent(
         idleCount++;
         #endif
         
-        // Skip agents that already have packages
         if (!agent->getPackages().empty())
             continue;
         
-        // Check if agent can complete the delivery (with charging stations)
         if (!canCompleteDelivery(agent.get(), package))
             continue;
         
-        // Calculate distance
         mapPosition agentPos = agent->getCurrentPosition();
         int distance = calculateDistance(agentPos, packageDest);
         
-        // Calculate score
         float score = calculateAgentScore(agent.get(), package, distance);
         
-        // Select agent with best (lowest) score
         if (score < bestScore)
         {
             bestScore = score;
@@ -355,7 +311,6 @@ IAgent* HiveMind::selectBestAgent(
     return bestAgent;
 }
 
-// Main algorithm: assign packages to agents
 void HiveMind::assignPackages(
     std::vector<std::unique_ptr<Package>>& packagesInBase,
     std::vector<std::unique_ptr<IAgent>>& agents)
@@ -367,22 +322,16 @@ void HiveMind::assignPackages(
     std::cout << "  [HIVEMIND] Attempting to assign " << packagesInBase.size() << " package(s)...\n";
     #endif
     
-    // NEW: Multi-criteria sorting for better optimization
-    // Sort packages by: 1) Urgency (remaining ticks), 2) Reward (higher first)
     std::sort(packagesInBase.begin(), packagesInBase.end(),
         [](const std::unique_ptr<Package>& a, const std::unique_ptr<Package>& b) {
-            // Primary: Urgency
             if (a->getRemainingTicks() != b->getRemainingTicks())
                 return a->getRemainingTicks() < b->getRemainingTicks();
-            // Secondary: Higher reward
             return a->getReward() > b->getReward();
         });
     
-    // NEW: Track assignment statistics for load balancing
     int assignmentsThisRound = 0;
-    int maxAssignmentsPerAgent = 1; // Prevent one agent from hogging all packages
+    int maxAssignmentsPerAgent = 1;
     
-    // Try to assign each package
     for (auto it = packagesInBase.begin(); it != packagesInBase.end(); )
     {
         IAgent* bestAgent = selectBestAgent(**it, agents);
@@ -395,7 +344,6 @@ void HiveMind::assignPackages(
                 << " (Battery: " << bestAgent->getCurrentBattery() << "/" << bestAgent->getMaxBattery() << ")\n";
             #endif
             
-            // Assign package to agent based on type - Polymorphism
             bool assigned = false;
             
             if (bestAgent->getSymbol() == AgentSymbol::DRONE)

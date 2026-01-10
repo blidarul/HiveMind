@@ -95,7 +95,6 @@ Simulation::Simulation()
 	getMap();
 	initializeAgents();
 	
-	// Initialize HiveMind after map is ready
 	m_hiveMind = std::make_unique<HiveMind>(m_map);
 }
 
@@ -123,11 +122,9 @@ void Simulation::printStatus() const
 			<< " | State: " << static_cast<int>(agent->getState())
 			<< " | Position: (" << pos.x << ", " << pos.y << ")";
 		
-		// Show battery for drones
 		if (agent->getSymbol() == AgentSymbol::DRONE)
 		{
 			Drone* drone = static_cast<Drone*>(agent.get());
-			// Note: We'd need a getBattery() method to show this properly
 			std::cout << " | Packages: " << agent->getPackages().size();
 		}
 		
@@ -212,7 +209,6 @@ void Simulation::getMap()
 	
 	delete generator;
 	
-	// Compute and store floodfill data from hub position
 	mapPosition hubPos = m_map.getHubPosition();
 	m_map.computeFloodfill(hubPos.x, hubPos.y);
 }
@@ -244,10 +240,8 @@ void Simulation::advanceTick()
 
 void Simulation::updateAgents()
 {
-	// Update all agents' states
 	for (auto& agent : m_agents)
 	{
-		// Store cost before update
 		int costBefore = 0;
 		
 		if (agent->getSymbol() == AgentSymbol::DRONE)
@@ -290,7 +284,6 @@ void Simulation::run()
 		advanceTick();
 		spawnPackage();
 		
-		// HiveMind assigns packages to agents
 		if (m_hiveMind && !m_packagesInBase.empty())
 		{
 			size_t beforeAssignment = m_packagesInBase.size();
@@ -308,32 +301,27 @@ void Simulation::run()
 			}
 		}
 		
-		// Update all agents
 		updateAgents();
 		
-		// Collect rewards from agents
 		for (auto& agent : m_agents)
 		{
 			if (agent->getSymbol() == AgentSymbol::DRONE)
 			{
 				Drone* drone = static_cast<Drone*>(agent.get());
-				// TODO: Need a method to get and clear personal rewards
 			}
 		}
 		
 		#ifdef DEBUG
-		if (m_currentTick % 10 == 0) // Print every 10 ticks to reduce spam
+		if (m_currentTick % 10 == 0)
 		{
 			printAlivePackages();
 		}
 		#endif
 	}
 	
-	// Calculate penalties at end of simulation
 	calculatePenalties();
 	calculateProfit();
 	
-	// Generate simulation report
 	generateReport();
 	
 	#ifdef DEBUG
@@ -354,7 +342,6 @@ void Simulation::calculateProfit()
 
 void Simulation::calculatePenalties()
 {
-	// Count dead agents
 	int deadAgents = 0;
 	for (const auto& agent : m_agents)
 	{
@@ -365,7 +352,6 @@ void Simulation::calculatePenalties()
 		}
 	}
 	
-	// Collect rewards from all agents
 	for (auto& agent : m_agents)
 	{
 		if (agent->getSymbol() == AgentSymbol::DRONE)
@@ -385,7 +371,6 @@ void Simulation::calculatePenalties()
 		}
 	}
 	
-	// Penalize undelivered packages
 	int undeliveredPackages = static_cast<int>(m_packagesInBase.size());
 	for (const auto& agent : m_agents)
 	{
@@ -412,26 +397,22 @@ void Simulation::generateReport()
 		return;
 	}
 	
-	// Header
 	report << "========================================\n";
 	report << "   HIVEMIND SIMULATION REPORT\n";
 	report << "========================================\n\n";
 	
-	// Simulation Parameters
 	report << "SIMULATION PARAMETERS:\n";
 	report << "  Map Size: " << m_map.getWidth() << "x" << m_map.getHeight() << "\n";
 	report << "  Total Ticks: " << m_maxTicks << "\n";
 	report << "  Clients: " << m_map.getClientCount() << "\n";
 	report << "  Charging Stations: " << m_map.getStationCount() << "\n\n";
 	
-	// Fleet Configuration
 	report << "FLEET CONFIGURATION:\n";
 	report << "  Drones: " << m_droneCount << "\n";
 	report << "  Robots: " << m_robotCount << "\n";
 	report << "  Scooters: " << m_scooterCount << "\n";
 	report << "  Total Agents: " << m_agentCount << "\n\n";
 	
-	// Package Statistics
 	report << "PACKAGE STATISTICS:\n";
 	report << "  Total Packages Spawned: " << m_packagesSpawned << "\n";
 	
@@ -466,7 +447,6 @@ void Simulation::generateReport()
 		<< (m_packagesSpawned > 0 ? (100.0 * (m_packagesSpawned - undeliveredPackages) / m_packagesSpawned) : 0.0) 
 		<< "%\n\n";
 	
-	// Agent Status
 	report << "AGENT STATUS:\n";
 	int deadAgents = 0;
 	int idleAgents = 0;
@@ -489,7 +469,6 @@ void Simulation::generateReport()
 	report << "  Moving: " << movingAgents << "\n";
 	report << "  Charging: " << chargingAgents << "\n\n";
 	
-	// Financial Summary
 	report << "========================================\n";
 	report << "FINANCIAL SUMMARY:\n";
 	report << "========================================\n";
@@ -503,7 +482,6 @@ void Simulation::generateReport()
 	report << "  NET PROFIT: $" << m_profit << "\n";
 	report << "========================================\n\n";
 	
-	// Performance Analysis
 	report << "PERFORMANCE ANALYSIS:\n";
 	if (m_profit > 0)
 	{
@@ -545,13 +523,11 @@ void Simulation::spawnPackage()
 
 void Simulation::updatePackageTicks()
 {
-	// Update packages in base
 	for (auto& package : m_packagesInBase)
 	{
 		package->decrementTick();
 	}
 	
-	// Update packages on agents
 	for (auto& agent : m_agents)
 	{
 		for (auto& package : agent->getPackages())

@@ -1,26 +1,24 @@
 #pragma once
 #include "agent.h"
-#include "package.h"
 #include "map.h"
-#include <vector>
+#include "package.h"
 #include <memory>
+#include <vector>
 
-// Strategy Pattern: HiveMind algorithm for package assignment
 class HiveMind
 {
 public:
     explicit HiveMind(const Map& map);
     
     // Core algorithm: assigns packages to best available agents
-    void assignPackages(
-        std::vector<std::unique_ptr<Package>>& packagesInBase,
-        std::vector<std::unique_ptr<IAgent>>& agents
-    );
+    void assignPackages(   
+        std::vector<std::unique_ptr<Package>>& packagesInBase, 
+        std::vector<std::unique_ptr<IAgent>>& agents);
     
 private:
     const Map& m_map;
     
-    // Helper functions for decision making
+    // helper functions
     int calculateDistance(mapPosition from, mapPosition to) const;
     int calculateTripCost(IAgent* agent, const Package& package) const;
     bool canCompleteDelivery(IAgent* agent, const Package& package) const;
@@ -30,13 +28,10 @@ private:
     
     IAgent* selectBestAgent(
         const Package& package,
-        std::vector<std::unique_ptr<IAgent>>& agents
-    );
+        std::vector<std::unique_ptr<IAgent>>& agents);
     
-    // Scoring function for agent selection
     float calculateAgentScore(
         IAgent* agent,
         const Package& package,
-        int distance
-    ) const;
+        int distance) const;
 };
